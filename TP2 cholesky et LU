@@ -1,0 +1,148 @@
+"""
+Created on Fri Apr  2 15:42:55 2021
+
+@author: eliot
+"""
+from math import sqrt
+import numpy as np
+import time
+import matplotlib.pyplot as plt
+
+def DecompositionLU(A):
+    n=np.shape(A)[0]
+    L=np.identity(n)
+    U= np.zeros(shape=(n,n))
+    for i in range(0, n-1):
+        for j in range(i+1, n):
+            L[j,i] = A[j,i]/A[i,i]
+            for k in range(i+1, n):
+                A[j,k] -= L[j,i]*U[i,k]
+        for j in range(i,n):
+            U[i,j] = A[i,j]
+    U[-1,-1] = A[-1,-1]
+    return L, U
+
+
+
+def ResolutionL(L,B):
+    n=len(B)
+    Y = [0 for i in range(n)]
+    Y[0]=B[0]/L[0][0]
+    for i in range(1,n):
+        s=0
+        for j in range(0, i):
+            s = s + L[i][j]*Y[j]
+            Y[i] = (B[i] - s)/L[i][i]
+    return Y
+
+def ResolutionU(U,Y):
+    n = len(Y)
+    X = [0 for i in range(n)]
+    X[n-1]=Y[n-1]/U[n-1][n-1]
+    for i in range(n-2,-1,-1):
+        s=0
+        for j in range(i+1,n):
+            s = s + U[i][j]*X[j]
+            X[i] = (Y[i] - s)/U[i][i]
+    return X
+
+def ResolutionLU(A,B):
+    L, U = DecompositionLU(A)
+    Y = ResolutionL(L, B)
+    X = ResolutionU(U, Y)
+    return X
+
+
+
+
+def Cholesky(A):
+    n=len(A)
+    L=[[0] * n for i in range(n)]
+    for i in range(0,n):
+        for k in range(0,i+1):
+            tmp = sum(L[i][j] * L[k][j] for j in range(k))
+            
+            if (i == k):
+                L[i][k] = sqrt(A[i][i] - tmp)
+            
+            else:
+                L[i][k]=((A[i][k]-tmp)/L[k][k])
+    return L
+    
+
+def ResolutionL(L,B):
+    n=len(B)
+    Y = [0 for i in range(n)]
+    Y[0]=B[0]/L[0][0]
+    for i in range(1,n):
+        s=0
+        for j in range(0,i):
+            s = s + L[i][j]*Y[j]
+            Y[i] = (B[i] - s)/L[i][i]
+    return Y
+
+def ResolutionLt(Lt,Y):
+    n = len(Y)
+    X = [0 for i in range(n)]
+    X[n-1]=Y[n-1]/Lt[n-1][n-1]
+    for i in range(n-2,-1,-1):
+        s=0
+        for j in range(i+1,n):
+            s = s + Lt[i][j]*X[j]
+            X[i] = (Y[i] - s)/Lt[i][i]
+    return X
+
+def ResolCholesky(A,B):
+    L = Cholesky(A)
+    Lt = np.transpose(L)
+    Y = ResolutionL(L, B)
+    X = ResolutionLt(Lt, Y)
+    return X
+
+def CholeskiMachine(A,B):
+    L = np.linalg.cholesky(A)
+    Lt = np.transpose(L)
+    Y = ResolutionL(L, B)
+    X = ResolutionLt(Lt, Y)
+    return X
+
+taille = list()
+tempsChol = list()
+tempsMachine = list()
+tempsLU = list()
+for n in range(5,100,5):
+    M = np.random.rand(n,n)
+    A = np.dot(np.transpose(M),M)
+    B = np.random.rand(n)
+    
+    t1= time.time()
+    X = ResolCholesky(A, B)
+    t2= time.time()
+    T = t2-t1
+    t3 =time.time()
+    X2 = CholeskiMachine(A, B)
+    t4 = time.time()
+    U = t4-t3
+    t5 = time.time()
+    X3 = ResolutionLU(A, B)
+    t6 =time.time()
+    V = t6-t5
+
+    
+    tempsChol.append(T)
+    tempsMachine.append(U)
+    tempsLU.append(V)
+    taille.append(n)
+    
+# print(tempsChol)
+# print(tempsMachine)
+# print(taille)
+    
+plt.title("temps de calcul du programmes en fonction de la taille de la matrice")
+plt.plot(taille, tempsChol, label="Choleski")
+plt.plot(taille, tempsMachine, label="np.linalg.cholesky")
+plt.plot(taille, tempsLU, label="Résolution LU")
+plt.xlabel('taille de la matrine')
+plt.ylabel('temps de calcul (en s)')
+plt.legend()
+plt.show()
